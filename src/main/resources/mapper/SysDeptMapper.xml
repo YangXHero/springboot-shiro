@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<mapper namespace="com.liuzw.springbootshiro.mapper.SysDeptMapper">
+
+	<resultMap id="BaseResultMap" type="com.liuzw.springbootshiro.bean.SysDept">
+		<id column="id" jdbcType="BIGINT" property="id" />
+		<id column="dept_num" jdbcType="VARCHAR" property="deptNum" />
+		<id column="parent_id" jdbcType="BIGINT" property="parentId" />
+		<id column="name" jdbcType="VARCHAR" property="name" />
+		<id column="order_num" jdbcType="DECIMAL" property="orderNum" />
+	</resultMap>
+
+
+	<sql id="Base_Column_List">
+		`id`,
+		`dept_num`,
+		`parent_id`,
+		`name`,
+		`order_num`,
+		`create_time`
+	</sql>
+
+	<select id="getList" resultType="com.liuzw.springbootshiro.model.SysDeptModel">
+		select <include refid="Base_Column_List"/>
+		from t_sys_dept
+		<where>
+			<if test="name != null and name != ''">
+				and name like concat(concat('%',#{name}),'%')
+			</if>
+			<if test="deptNum != null and deptNum != ''">
+				and dept_num like concat(concat('%',#{deptNum}),'%')
+			</if>
+		</where>
+		order by order_num
+	</select>
+
+
+	<delete id="batchRemove">
+		delete from t_sys_dept where id in
+		<foreach collection="ids" item="id" open="(" close=")" separator=",">
+			#{id,jdbcType = BIGINT}
+		</foreach>
+	</delete>
+
+	<select id="getDeptSelectList" resultType="com.liuzw.springbootshiro.model.SysDeptModel">
+		select `id` ,`name` from t_sys_dept
+	</select>
+</mapper>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<mapper namespace="com.liuzw.springbootshiro.mapper.SysMenuMapper">
+
+	<resultMap id="BaseResultMap" type="com.liuzw.springbootshiro.bean.SysMenu">
+		<id column="id" jdbcType="BIGINT" property="id" />
+		<id column="parent_id" jdbcType="BIGINT" property="parentId" />
+		<id column="name" jdbcType="VARCHAR" property="name" />
+		<id column="path" jdbcType="VARCHAR" property="path" />
+		<id column="perms" jdbcType="VARCHAR" property="perms" />
+		<id column="type" jdbcType="INTEGER" property="type" />
+		<id column="iconCls" jdbcType="VARCHAR" property="iconCls" />
+		<id column="order_num" jdbcType="INTEGER" property="orderNum" />
+		<id column="status" jdbcType="INTEGER" property="status" />
+	</resultMap>
+
+
+	<sql id="Base_Column_List">
+        `id`,
+		`parent_id`,
+		`name`,
+		`path`,
+		`perms`,
+		`type`,
+		`iconCls`,
+		`order_num`,
+		`status`
+	</sql>
+
+	<select id="getMenu" resultType="com.liuzw.springbootshiro.model.SysMenuModel">
+		select <include refid="Base_Column_List"/>
+		from t_sys_menu
+		where `type` in(1,2)
+			<if test="name != null and name != ''">
+				and `name` like concat(concat('%',#{name}),'%')
+			</if>
+			<if test="status != null">
+				and `status` = #{status}
+			</if>
+	</select>
+
+	<select id="getMenuSelectList" resultType="com.liuzw.springbootshiro.model.SysMenuModel">
+		select <include refid="Base_Column_List"/>
+		from t_sys_menu where `type` in(1,2) and `status` = 1
+	</select>
+
+
+	<select id="getButton" resultType="com.liuzw.springbootshiro.model.SysMenuModel">
+		select <include refid="Base_Column_List"/>
+		from t_sys_menu
+		where `type` = 3
+		<if test="status != null">
+			and `status` = #{status}
+		</if>
+		and `parent_id` in
+		<foreach collection="ids" item="id" open="(" close=")" separator=",">
+			#{id}
+		</foreach>
+	</select>
+
+	<select id="getMenuListById" resultMap="BaseResultMap">
+		select t.* from t_sys_menu t
+		join(
+			select distinct(t1.menu_id) menu_id
+			from t_sys_role_menu t1
+			left join t_sys_user_role t2 on t2.role_id = t1.role_id
+			where t2.user_id = #{id}
+		) tt on t.id = tt.menu_id
+		where t.status =1	;
+
+	</select>
+
+	<insert id="insertRoleMenu">
+		insert into t_sys_role_menu(role_id,menu_id) values(1,#{id,jdbcType=BIGINT})
+	</insert>
+
+	<delete id="deleteRoleByMenuId">
+		delete from t_sys_role_menu where menu_id = #{id,jdbcType=BIGINT}
+	</delete>
+
+	<update id="editStatus">
+		update t_sys_menu set `status` =#{status} where id = #{id}
+	</update>
+
+	<select id="checkMenuByParentId" resultType="java.lang.Integer">
+		select count(1) from t_sys_menu where parent_id = #{id}
+	</select>
+
+</mapper>

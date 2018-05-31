@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<mapper namespace="com.liuzw.springbootshiro.mapper.SysUserMapper">
+
+	<resultMap id="BaseResultMap" type="com.liuzw.springbootshiro.bean.SysUser">
+		<id column="id" jdbcType="BIGINT" property="id" />
+		<id column="username" jdbcType="VARCHAR" property="userName" />
+		<id column="name" jdbcType="VARCHAR" property="name" />
+		<id column="password" jdbcType="VARCHAR" property="password" />
+		<id column="email" jdbcType="VARCHAR" property="email" />
+		<id column="sex" jdbcType="INTEGER" property="sex" />
+		<id column="mobile" jdbcType="VARCHAR" property="mobile" />
+		<id column="status" jdbcType="INTEGER" property="status" />
+		<id column="dept_name" jdbcType="VARCHAR" property="deptName" />
+		<id column="dept_id" jdbcType="BIGINT" property="deptId" />
+		<id column="role_name" jdbcType="VARCHAR" property="roleName" />
+		<id column="admin_flag" jdbcType="INTEGER" property="adminFlag" />
+	</resultMap>
+
+
+	<sql id="Base_Column_List">
+		`id`,
+		`username`,
+		`name`,
+		`password`,
+		`email`,
+		`sex`,
+		`mobile`,
+		`status`,
+		`dept_id`,
+		`last_login_time`,
+		`create_time`,
+		`update_time`,
+		`admin_flag`
+	</sql>
+
+
+	<select id="getList" resultMap="BaseResultMap">
+		select t.`id`,t.`username`,t.`name`,t.`email`,t.`sex`,t.`mobile`,t.`status`,t.`dept_id`,
+		group_concat(t2.role_name) role_name,group_concat(t3.name) dept_name
+		from t_sys_user t
+		left join (
+			select group_concat(tt1.role_name) role_name, tt2.user_id,tt1.`status`
+			from t_sys_user_role tt2
+			left join t_sys_role tt1 on tt1.id = tt2.role_id
+			where tt1.status = 1
+			group by tt2.user_id
+		) t2 on t.id = t2.user_id
+		left join t_sys_dept t3 on t.dept_id = t3.id
+		where t.admin_flag = 0
+		<if test="userName != null and userName !=''">
+		   and t.username like concat(concat('%',#{userName}),'%')
+		</if>
+		<if test="name != null and name !=''">
+			and t.name like concat(concat('%',#{name}),'%')
+		</if>
+		group by t.id
+		order by t.id
+	</select>
+
+
+	<select id="getRoleByUserId" resultType="java.util.Map">
+		SELECT t.role_id roleId, t1.role_name roleName
+		FROM t_sys_user_role t
+		left join t_sys_role t1 on t.role_id = t1.id
+		where user_id = #{userId}
+	</select>
+
+	<update id="editStatus">
+		update t_sys_user set `status` =#{status} where id = #{id} and admin_flag =0
+	</update>
+
+	<update id="updatePwd">
+		update t_sys_user set `password` =#{newPassword} where id = #{id}
+	</update>
+
+	<insert id="insertRoleByUserId">
+		 insert into t_sys_user_role(user_id, role_id) values
+		 <foreach collection="roleList" item="roleId" separator=",">
+			 (#{userId,jdbcType=BIGINT},#{roleId,jdbcType=BIGINT})
+		 </foreach>
+	</insert>
+
+	<insert id="insertStoreByUserId">
+		insert into t_sys_user_store(user_id, store_id) values
+		<foreach collection="storeList" item="storeId" separator=",">
+			(#{userId,jdbcType=BIGINT},#{storeId,jdbcType=BIGINT})
+		</foreach>
+	</insert>
+
+
+	<delete id="deleteRoleByUserId">
+		delete from t_sys_user_role where user_id in
+		<foreach collection="ids" item="id" open="(" close=")" separator=",">
+			#{id,jdbcType = BIGINT}
+		</foreach>
+	</delete>
+
+	<delete id="deleteStoreByUserId">
+		delete from t_sys_user_store where user_id in
+		<foreach collection="ids" item="id" open="(" close=")" separator=",">
+			#{id,jdbcType = BIGINT}
+		</foreach>
+	</delete>
+
+
+	<delete id="batchRemove">
+		delete from t_sys_user where id in
+		<foreach collection="ids" item="id" open="(" close=")" separator=",">
+			#{id,jdbcType = BIGINT}
+		</foreach>
+		and admin_flag = 0
+	</delete>
+
+	<update id="updateLoginStatus">
+		update t_sys_user set first_login_flag = 1 where id = #{id} and first_login_flag = 0
+	</update>
+
+	<update id="resetPwd">
+		update t_sys_user set first_login_flag = 0, password = #{password, jdbcType = VARCHAR} where id = #{id,jdbcType = BIGINT} and admin_flag = 0
+	</update>
+
+</mapper>
